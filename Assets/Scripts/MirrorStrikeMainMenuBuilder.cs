@@ -101,9 +101,6 @@ namespace MyoGuess.EditorTools
             scaler.referenceResolution = new Vector2(1920f, 1080f);
             root.AddComponent<GraphicRaycaster>();
 
-            MirrorStrikeBackdrop backdrop = CreateStretch<MirrorStrikeBackdrop>("NeonBackdrop", canvasRect);
-            backdrop.raycastTarget = false;
-
             CanvasGroup content = CreateStretch<CanvasGroup>("Content", canvasRect);
             RectTransform contentRect = content.GetComponent<RectTransform>();
 
@@ -129,8 +126,6 @@ namespace MyoGuess.EditorTools
             GameObject gestureObject = CreateUIObject("GestureStrip", contentRect);
             RectTransform gestureRect = gestureObject.GetComponent<RectTransform>();
             SetCentered(gestureRect, new Vector2(0f, -184f), new Vector2(310f, 70f));
-            MirrorStrikeGestureStrip gestureStrip = gestureObject.AddComponent<MirrorStrikeGestureStrip>();
-            gestureStrip.raycastTarget = false;
 
             MirrorStrikeMainMenuController controller = root.AddComponent<MirrorStrikeMainMenuController>();
             controller.Configure(startButton, content);

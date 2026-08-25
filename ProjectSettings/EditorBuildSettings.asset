@@ -4,7 +4,16 @@
 EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
-  m_Scenes: []
+  m_Scenes:
+  - enabled: 1
+    path: Assets/Scenes/MainMenu.unity
+    guid: 9aa56c8a284bd8b499af8f871bc1f43f
+  - enabled: 1
+    path: Assets/Scenes/Gameplay.unity
+    guid: 2e6760e7c17bf1947adbee02c301740a
+  - enabled: 1
+    path: Assets/Scenes/GameOver.unity
+    guid: 1bfc0890ac0cb42409e0365cf0db1788
   m_configObjects:
     com.unity.xr.management.loader_settings: {fileID: 11400000, guid: ca837eb89b1f2a04286dcc79a42c8ca9, type: 2}
     com.unity.xr.openxr.settings4: {fileID: 11400000, guid: 03180f847c59e904ea0c03b1f07fd345, type: 2}
