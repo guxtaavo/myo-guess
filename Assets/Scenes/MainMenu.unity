@@ -520,54 +520,6 @@ Transform:
   - {fileID: 1981887214}
   m_Father: {fileID: 143922503}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &390594270
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 390594271}
-  - component: {fileID: 390594272}
-  m_Layer: 5
-  m_Name: NeonBackdrop
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!224 &390594271
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 390594270}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 1543004666}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 0}
-  m_Pivot: {x: 0.5, y: 0.5}
---- !u!114 &390594272
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 390594270}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 08c564e6dbf6f32439537be772b8a147, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MyoGuess.MainMenu.MirrorStrikeBackdrop
 --- !u!1 &462600021
 GameObject:
   m_ObjectHideFlags: 0
@@ -629,8 +581,8 @@ MonoBehaviour:
 
 '
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: c62723ce5ad7a2241ae6584c395d64e1, type: 2}
+  m_sharedMaterial: {fileID: -3516592250796336802, guid: c62723ce5ad7a2241ae6584c395d64e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -766,8 +718,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: INICIAR
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 7fc0ec79b1c789b498f1c433ccbd2713, type: 2}
+  m_sharedMaterial: {fileID: -4937066897054580889, guid: 7fc0ec79b1c789b498f1c433ccbd2713, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -1852,8 +1804,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: "Gestos vir\xE3o em sua dire\xE7\xE3o \u2014 copie-os para marcar pontos!"
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 7fc0ec79b1c789b498f1c433ccbd2713, type: 2}
+  m_sharedMaterial: {fileID: -4937066897054580889, guid: 7fc0ec79b1c789b498f1c433ccbd2713, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2225,9 +2177,8 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: babd5dca513c1ac458a3d1827d5b9cac, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::MyoGuess.MainMenu.MirrorStrikeMainMenuController
-  startButton: {fileID: 1001834303}
-  content: {fileID: 1039768404}
+  m_EditorClassIdentifier: Assembly-CSharp::MyoGuess.MainMenu.MainMenuController
+  playButton: {fileID: 1001834303}
   gameplaySceneName: Gameplay
 --- !u!114 &1543004663
 MonoBehaviour:
@@ -2304,14 +2255,13 @@ RectTransform:
   m_LocalScale: {x: 0.00172, y: 0.00172, z: 0.00172}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 390594271}
   - {fileID: 1039768405}
   - {fileID: 1957950435}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 0, y: 1.62}
+  m_AnchoredPosition: {x: 0, y: 1.2}
   m_SizeDelta: {x: 1920, y: 1080}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1543004667
@@ -2747,8 +2697,8 @@ MonoBehaviour:
 
 '
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: c62723ce5ad7a2241ae6584c395d64e1, type: 2}
+  m_sharedMaterial: {fileID: -3516592250796336802, guid: c62723ce5ad7a2241ae6584c395d64e1, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
@@ -2884,8 +2834,8 @@ MonoBehaviour:
       m_Calls: []
   m_text: GESTURE ARENA
   m_isRightToLeft: 0
-  m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
-  m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
+  m_fontAsset: {fileID: 11400000, guid: 7fc0ec79b1c789b498f1c433ccbd2713, type: 2}
+  m_sharedMaterial: {fileID: -4937066897054580889, guid: 7fc0ec79b1c789b498f1c433ccbd2713, type: 2}
   m_fontSharedMaterials: []
   m_fontMaterial: {fileID: 0}
   m_fontMaterials: []
