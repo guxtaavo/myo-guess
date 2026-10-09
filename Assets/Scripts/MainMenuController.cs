@@ -8,16 +8,22 @@ namespace MyoGuess.MainMenu
     {
         [SerializeField] private Button playButton;
         [SerializeField] private string gameplaySceneName = "Gameplay";
+        [SerializeField] private Button trainingButton;
+        [SerializeField] private string trainingSceneName = "Training";
 
         private void Awake()
         {
             if (playButton == null)
             {
                 Debug.LogError("Arraste o botao Jogar para o campo Play Button.", this);
-                return;
+            }
+            else
+            {
+                playButton.onClick.AddListener(OpenGameplay);
             }
 
-            playButton.onClick.AddListener(OpenGameplay);
+            if (trainingButton != null)
+                trainingButton.onClick.AddListener(OpenTraining);
         }
 
         private void OnDestroy()
@@ -26,11 +32,19 @@ namespace MyoGuess.MainMenu
             {
                 playButton.onClick.RemoveListener(OpenGameplay);
             }
+
+            if (trainingButton != null)
+                trainingButton.onClick.RemoveListener(OpenTraining);
         }
 
         public void OpenGameplay()
         {
             SceneManager.LoadScene(gameplaySceneName);
+        }
+
+        public void OpenTraining()
+        {
+            SceneManager.LoadScene(trainingSceneName);
         }
     }
 }
