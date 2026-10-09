@@ -1073,6 +1073,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 509032937}
+  - component: {fileID: 509032938}
   m_Layer: 0
   m_Name: GameplayManager
   m_TagString: Untagged
@@ -1095,6 +1096,31 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &509032938
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 509032936}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 064c4585fcb638a45a487e6ab085bf00, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MyoGuess.Gameplay.GestureRoundController
+  gestureImage: {fileID: 629444527}
+  gestureSprites:
+  - {fileID: 21300000, guid: 6e9523a0e0b34d941a5b8c5288ad3fe7, type: 3}
+  - {fileID: 21300000, guid: 570bba32357491348b2f92fb8bbd9b32, type: 3}
+  - {fileID: 21300000, guid: f71d9ac2fefaad04896ff3c33e0ba93c, type: 3}
+  - {fileID: 21300000, guid: f382941a1f6279a4aa2acd00dd9d64de, type: 3}
+  - {fileID: 21300000, guid: d5829c75521c4d34c8d2cdf4f48f7178, type: 3}
+  - {fileID: 21300000, guid: ec208527472089e42bc7eafe4725c0ee, type: 3}
+  spawnPoint: {fileID: 1540248207}
+  endPoint: {fileID: 1793559739}
+  roundDuration: 5
+  timerText: {fileID: 1920752172}
+  timerFill: {fileID: 1059690730}
 --- !u!1001 &517784119
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1501,6 +1527,8 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 629444526}
+  - {fileID: 1540248207}
+  - {fileID: 1793559739}
   m_Father: {fileID: 1820832511}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
@@ -3789,6 +3817,37 @@ Transform:
   - {fileID: 1109262400}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1540248206
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1540248207}
+  m_Layer: 5
+  m_Name: GestureSpawnPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1540248207
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1540248206}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -64, z: 1250}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 534037535}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1552889402
 GameObject:
   m_ObjectHideFlags: 0
@@ -4076,6 +4135,37 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1671747502}
   m_CullTransparentMesh: 1
+--- !u!1 &1793559738
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1793559739}
+  m_Layer: 5
+  m_Name: GestureEndPoint
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1793559739
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1793559738}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: -64, z: -500}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 534037535}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1807900999
 GameObject:
   m_ObjectHideFlags: 0
