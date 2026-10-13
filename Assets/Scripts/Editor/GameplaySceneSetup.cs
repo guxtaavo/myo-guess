@@ -28,9 +28,9 @@ public static class GameplaySceneSetup
         var fbg = manager.GetComponent<FbgGestureSource>() ?? Undo.AddComponent<FbgGestureSource>(manager);
         var panel = manager.GetComponent<GameOverPanel>() ?? Undo.AddComponent<GameOverPanel>(manager);
 
-        var poseNames = new[] { "StopPoseRight", "PointerPoseRight", "RockPoseRight", "TripodPoseRight", "ThumbsUpRight" };
-        var gestureIds = new[] { GestureType.OpenHand, GestureType.Pointer, GestureType.Rock, GestureType.Tripod, GestureType.ThumbsUp };
-        var spriteNames = new[] { "open", "pointer", "rock", "tripod", "ok" };
+        var poseNames = new[] { "StopPoseRight", "PointerPoseRight", "RockPoseRight", "TripodPoseRight", "ThumbsUpRight", "RestPoseRight" };
+        var gestureIds = new[] { GestureType.OpenHand, GestureType.Pointer, GestureType.Rock, GestureType.Tripod, GestureType.ThumbsUp, GestureType.Rest };
+        var spriteNames = new[] { "open", "pointer", "rock", "tripod", "ok", "rest" };
         var sourceSettings = new SerializedObject(source);
         var bindings = sourceSettings.FindProperty("bindings");
         bindings.arraySize = poseNames.Length;

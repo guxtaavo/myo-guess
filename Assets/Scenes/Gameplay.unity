@@ -339,7 +339,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 58336170}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 73eac66b128fc8749a21623225c34541, type: 3}
   m_Name: 
@@ -567,7 +567,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 89866313}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 73eac66b128fc8749a21623225c34541, type: 3}
   m_Name: 
@@ -1418,6 +1418,8 @@ MonoBehaviour:
     image: {fileID: 21300000, guid: d5829c75521c4d34c8d2cdf4f48f7178, type: 3}
   - gesture: 5
     image: {fileID: 21300000, guid: ec208527472089e42bc7eafe4725c0ee, type: 3}
+  - gesture: 6
+    image: {fileID: 21300000, guid: 6e9523a0e0b34d941a5b8c5288ad3fe7, type: 3}
   startingLives: 3
   pointsPerGesture: 100
   evaluationLeadTime: 0.1
@@ -1487,6 +1489,8 @@ MonoBehaviour:
     activeState: {fileID: 880171652}
   - gesture: 5
     activeState: {fileID: 232342487}
+  - gesture: 6
+    activeState: {fileID: 562431310}
 --- !u!1 &513730597
 GameObject:
   m_ObjectHideFlags: 0
@@ -2199,34 +2203,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Oculus.Interaction::Oculus.Interaction.PoseDetection.TransformRecognizerActiveState
   _transformFeatureStateProvider: {fileID: 517784123}
   _transformFeatureConfigs:
-    _values:
-    - _mode: 0
-      _feature: 2
-      _state: 6
-    - _mode: 0
-      _feature: 0
-      _state: 0
-    - _mode: 0
-      _feature: 1
-      _state: 3
-    - _mode: 0
-      _feature: 3
-      _state: 9
-    - _mode: 0
-      _feature: 4
-      _state: 12
-    - _mode: 0
-      _feature: 5
-      _state: 15
-    - _mode: 0
-      _feature: 6
-      _state: 18
-    - _mode: 0
-      _feature: 7
-      _state: 21
-    - _mode: 0
-      _feature: 8
-      _state: 24
+    _values: []
   _transformConfig:
     PositionOffset: {x: 0, y: 0, z: 0}
     RotationOffset: {x: 0, y: 0, z: 0}
@@ -3002,10 +2979,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Oculus.Interaction::Oculus.Interaction.PoseDetection.TransformRecognizerActiveState
   _transformFeatureStateProvider: {fileID: 517784123}
   _transformFeatureConfigs:
-    _values:
-    - _mode: 0
-      _feature: 2
-      _state: 6
+    _values: []
   _transformConfig:
     PositionOffset: {x: 0, y: 0, z: 0}
     RotationOffset: {x: 0, y: 0, z: 0}
@@ -3468,6 +3442,10 @@ PrefabInstance:
       propertyPath: _centerEyeCamera
       value: 
       objectReference: {fileID: 1051701582}
+    - target: {fileID: 2295201657191556265, guid: 0a7d2469f24041c4284c66706f84c45e, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: a18883aab4f9c6f4993e1cff18e0c111, type: 2}
     - target: {fileID: 2336446269904782542, guid: 0a7d2469f24041c4284c66706f84c45e, type: 3}
       propertyPath: _centerEyeCamera
       value: 
@@ -3528,14 +3506,26 @@ PrefabInstance:
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6147449420414275629, guid: 0a7d2469f24041c4284c66706f84c45e, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: a18883aab4f9c6f4993e1cff18e0c111, type: 2}
     - target: {fileID: 6267690530596161800, guid: 0a7d2469f24041c4284c66706f84c45e, type: 3}
       propertyPath: _ovrCameraRig
       value: 
       objectReference: {fileID: 1525313846}
+    - target: {fileID: 7571697209268880050, guid: 0a7d2469f24041c4284c66706f84c45e, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: a18883aab4f9c6f4993e1cff18e0c111, type: 2}
     - target: {fileID: 8702425412432602677, guid: 0a7d2469f24041c4284c66706f84c45e, type: 3}
       propertyPath: m_Enabled
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 8702425412432602677, guid: 0a7d2469f24041c4284c66706f84c45e, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: a18883aab4f9c6f4993e1cff18e0c111, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -4642,7 +4632,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Meta.XR.BuildingBlocks::Meta.XR.BuildingBlocks.BuildingBlock
   blockId: e47682b9-c270-40b1-b16d-90b627a5ce1b
-  instanceId: ea2a4307-7476-4c61-b0dd-70a900404ce3
+  instanceId: 46eebda7-2462-4607-8550-2f840cb79d57
   version: 1
   installationRoutineCheckpoint:
     _installationRoutineId: 
