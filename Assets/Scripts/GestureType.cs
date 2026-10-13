@@ -1,6 +1,6 @@
 namespace MyoGuess.Gameplay
 {
-    public enum GestureType { None, OpenHand, Pointer, Rock, Tripod, ThumbsUp }
+    public enum GestureType { None, OpenHand, Pointer, Rock, Tripod, ThumbsUp, Rest }
 
     public enum GestureInputMode
     {
