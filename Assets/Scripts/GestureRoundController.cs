@@ -1,99 +1,166 @@
+using System;
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace MyoGuess.Gameplay
 {
+    [Serializable]
+    public sealed class GameplayGesture
+    {
+        public GestureType gesture;
+        public Sprite image;
+    }
+
     [DisallowMultipleComponent]
     public sealed class GestureRoundController : MonoBehaviour
     {
-        [Header("Gesture")]
+        private const string HighScoreKey = "MyoGuess.HighScore";
+
+        [Header("Entrada de gestos")]
+        [SerializeField] private GestureInputMode inputMode = GestureInputMode.Headset;
+        [SerializeField] private HeadsetGestureSource headsetSource;
+        [SerializeField] private FbgGestureSource fbgSource;
+        [Tooltip("Registra a decisão e a leitura do sensor uma única vez por rodada.")]
+        [SerializeField] private bool logRoundResults = true;
+
+        [Header("Gestos")]
         [SerializeField] private UnityEngine.UI.Image gestureImage;
-        [SerializeField] private Sprite[] gestureSprites;
+        [SerializeField] private GameplayGesture[] gestures;
+
+        [Header("Regras")]
+        [Min(1)] [SerializeField] private int startingLives = 3;
+        [Min(1)] [SerializeField] private int pointsPerGesture = 100;
+        [Tooltip("Confere o gesto este tempo antes do fim. 0,1 s numa rodada de 5 s = aos 4,9 s.")]
+        [Min(0f)] [SerializeField] private float evaluationLeadTime = 0.1f;
+        [Min(0.1f)] [SerializeField] private float roundDuration = 5f;
+        [Min(0f)] [SerializeField] private float feedbackDuration = 0.75f;
 
         [Header("Approach")]
         [SerializeField] private Transform spawnPoint;
         [SerializeField] private Transform endPoint;
-        [Tooltip("Tempo da aproximacao e da rodada, em segundos.")]
-        [Min(0.1f)]
-        [SerializeField] private float roundDuration = 5f;
 
-        [Header("Timer")]
+        [Header("HUD")]
         [SerializeField] private TMP_Text timerText;
         [SerializeField] private UnityEngine.UI.Image timerFill;
+        [SerializeField] private TMP_Text scoreText;
+        [SerializeField] private UnityEngine.UI.Image[] lifeImages;
+        [SerializeField] private TMP_Text feedbackText;
 
-        private float elapsedTime;
-        private bool configured;
-        private bool roundActive;
+        [Header("Game Over")]
+        [SerializeField] private GameOverPanel gameOverPanel;
+        [SerializeField] private string mainMenuSceneName = "MainMenu";
+
+        private GameplaySession session;
+        private GestureSource source;
+        private GameplayGesture currentGesture;
+        private float feedbackRemaining;
         private int displayedSeconds = -1;
+        private Color gestureColor;
 
         public int RoundNumber { get; private set; }
-        public float RemainingTime => Mathf.Max(0f, roundDuration - elapsedTime);
+        public int Score => session?.Score ?? 0;
+        public int Lives => session?.Lives ?? startingLives;
+        public int HighScore { get; private set; }
+        public bool IsGameOver => session != null && session.IsGameOver;
+        public float RemainingTime => session?.RemainingTime ?? roundDuration;
+        public GestureType CurrentGesture => currentGesture?.gesture ?? GestureType.None;
 
         private void Awake()
         {
-            configured = ValidateConfiguration();
-            if (!configured)
+            HighScore = PlayerPrefs.GetInt(HighScoreKey, 0);
+            gestureColor = gestureImage != null ? gestureImage.color : Color.white;
+            if (gameOverPanel != null)
             {
-                if (gestureImage != null)
-                    gestureImage.gameObject.SetActive(false);
-
-                enabled = false;
+                gameOverPanel.RestartRequested += RestartGame;
+                gameOverPanel.MenuRequested += ReturnToMenu;
+                gameOverPanel.Hide();
             }
         }
 
-        private void OnEnable()
-        {
-            if (configured)
-                BeginRound();
-        }
+        private void Start() => RestartGame();
 
-        private void Update()
+        public void RestartGame()
         {
-            if (!roundActive)
+            source = inputMode == GestureInputMode.Headset ? (GestureSource)headsetSource : fbgSource;
+            if (gameOverPanel != null) gameOverPanel.Hide();
+            if (!ValidateConfiguration())
             {
-                // Um frame oculto separa o fim do gesto do proximo sorteio.
-                BeginRound();
+                session = null;
+                if (gestureImage != null) gestureImage.gameObject.SetActive(false);
+                SetFeedback(inputMode == GestureInputMode.FBG ? "SENSOR FBG: A IMPLEMENTAR" : "CONFIGURE A ENTRADA DE GESTOS", Color.white);
                 return;
             }
 
-            elapsedTime = Mathf.Min(elapsedTime + Time.deltaTime, roundDuration);
-            float progress = elapsedTime / roundDuration;
-
-            // O mesmo progresso controla a posicao, os segundos e a barra.
-            gestureImage.rectTransform.position = Vector3.Lerp(
-                spawnPoint.position, endPoint.position, progress);
-            UpdateTimer();
-
-            if (progress >= 1f)
-                EndRound();
+            session = new GameplaySession(startingLives, pointsPerGesture, roundDuration, evaluationLeadTime);
+            RoundNumber = 0;
+            feedbackRemaining = 0f;
+            UpdateHud();
+            BeginRound();
         }
 
-        private void OnDisable()
+        // Avalia após os Update dos reconhecedores de pose e dos eventos do Meta SDK.
+        private void LateUpdate()
         {
-            roundActive = false;
-            if (configured)
-                gestureImage.gameObject.SetActive(false);
+            if (session == null || session.IsGameOver) return;
+            if (!session.IsRoundActive)
+            {
+                feedbackRemaining -= Time.deltaTime;
+                if (feedbackRemaining <= 0f) BeginRound();
+                return;
+            }
+
+            RoundResult result = session.Advance(Time.deltaTime, source.IsGestureActive(CurrentGesture));
+            float progress = 1f - RemainingTime / roundDuration;
+            gestureImage.rectTransform.position = Vector3.Lerp(spawnPoint.position, endPoint.position, progress);
+            UpdateTimer();
+            if (result != RoundResult.None) EndRound(result);
         }
 
         private void BeginRound()
         {
-            elapsedTime = 0f;
-            gestureImage.sprite = gestureSprites[Random.Range(0, gestureSprites.Length)];
+            session.BeginRound();
+            currentGesture = gestures[UnityEngine.Random.Range(0, gestures.Length)];
+            gestureImage.sprite = currentGesture.image;
+            gestureImage.color = gestureColor;
             gestureImage.rectTransform.position = spawnPoint.position;
             gestureImage.gameObject.SetActive(true);
-            roundActive = true;
             RoundNumber++;
+            SetFeedback("COPIE O GESTO", Color.white);
             UpdateTimer();
         }
 
-        private void EndRound()
+        private void EndRound(RoundResult result)
         {
-            if (!roundActive)
-                return;
+            bool correct = result == RoundResult.Correct;
+            if (logRoundResults)
+            {
+                string reading = source is HeadsetGestureSource headset
+                    ? headset.DescribeLastReading() : $"entrada={inputMode}, alvo={CurrentGesture}";
+                Debug.Log($"[Gameplay] Rodada {RoundNumber}, imagem={currentGesture.image.name}, " +
+                    $"tempo={roundDuration - RemainingTime:0.00}s, resultado={(correct ? "ACERTO" : "ERRO")}: {reading}", this);
+            }
+            gestureImage.color = correct ? new Color(0f, 1f, 0.86f) : new Color(1f, 0.3f, 0.45f);
+            SetFeedback(correct ? $"ACERTO! +{pointsPerGesture}" : "GESTO INCORRETO — PERDEU UMA VIDA", gestureImage.color);
+            feedbackRemaining = feedbackDuration;
+            UpdateHud();
+            if (session.IsGameOver)
+            {
+                HighScore = Math.Max(HighScore, Score);
+                PlayerPrefs.SetInt(HighScoreKey, HighScore);
+                PlayerPrefs.Save();
+                // Só as rodadas param. Tracking e interação VR continuam ativos no painel.
+                gameOverPanel.Show(Score, HighScore);
+            }
+        }
 
-            roundActive = false;
-            // Reutiliza a imagem existente; nao instancia objetos a cada rodada.
-            gestureImage.gameObject.SetActive(false);
+        public void ReturnToMenu() => SceneManager.LoadScene(mainMenuSceneName);
+
+        private void UpdateHud()
+        {
+            scoreText.SetText("{0:0}", Score);
+            for (int i = 0; i < lifeImages.Length; i++)
+                lifeImages[i].color = i < Lives ? Color.white : new Color(0.3f, 0.3f, 0.3f, 0.25f);
         }
 
         private void UpdateTimer()
@@ -104,38 +171,51 @@ namespace MyoGuess.Gameplay
                 timerText.SetText("{0:0}", seconds);
                 displayedSeconds = seconds;
             }
-
             timerFill.fillAmount = RemainingTime / roundDuration;
+        }
+
+        private void SetFeedback(string message, Color color)
+        {
+            if (feedbackText == null) return;
+            feedbackText.text = message;
+            feedbackText.color = color;
         }
 
         private bool ValidateConfiguration()
         {
-            if (gestureImage == null || spawnPoint == null || endPoint == null ||
-                timerText == null || timerFill == null || roundDuration <= 0f ||
-                gestureSprites == null || gestureSprites.Length == 0)
+            if (source == null || !source.IsAvailable)
             {
-                Debug.LogError("Configure a imagem, os gestos, os pontos de inicio/fim e o timer no GestureRoundController.", this);
+                Debug.LogWarning(inputMode == GestureInputMode.FBG ? "Sensor FBG: implementação pendente. A partida não será iniciada." : "Configure a fonte de gestos do óculos.", this);
                 return false;
             }
-
-            foreach (Sprite sprite in gestureSprites)
+            if (gestureImage == null || spawnPoint == null || endPoint == null || timerText == null ||
+                timerFill == null || scoreText == null || gameOverPanel == null || !gameOverPanel.IsConfigured ||
+                startingLives < 1 || pointsPerGesture < 1 || roundDuration <= 0f ||
+                evaluationLeadTime < 0f || evaluationLeadTime >= roundDuration || lifeImages == null || lifeImages.Length < startingLives ||
+                gestures == null || gestures.Length == 0)
             {
-                if (sprite == null)
+                Debug.LogError("Configure os gestos, regras, HUD e painel de game over no GestureRoundController.", this);
+                return false;
+            }
+            foreach (var life in lifeImages) if (life == null) return false;
+            foreach (var gesture in gestures)
+                if (gesture == null || gesture.image == null || !source.CanRecognize(gesture.gesture))
                 {
-                    Debug.LogError("A lista de gestos contem uma imagem vazia.", this);
+                    Debug.LogError("Cada imagem sorteada precisa ter uma pose correspondente na fonte de gestos.", this);
                     return false;
                 }
-            }
-
             if (spawnPoint == gestureImage.transform || endPoint == gestureImage.transform ||
                 spawnPoint.IsChildOf(gestureImage.transform) || endPoint.IsChildOf(gestureImage.transform) ||
                 Vector3.SqrMagnitude(spawnPoint.position - endPoint.position) < 0.000001f)
-            {
-                Debug.LogError("Use pontos de inicio/fim distintos e independentes da imagem animada.", this);
                 return false;
-            }
-
             return true;
+        }
+
+        private void OnDestroy()
+        {
+            if (gameOverPanel == null) return;
+            gameOverPanel.RestartRequested -= RestartGame;
+            gameOverPanel.MenuRequested -= ReturnToMenu;
         }
     }
 }
