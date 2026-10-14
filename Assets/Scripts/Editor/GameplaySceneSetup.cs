@@ -40,7 +40,10 @@ public static class GameplaySceneSetup
             if (state == null) throw new InvalidOperationException("Pose sem ActiveStateGroup: " + poseNames[i]);
             bindings.GetArrayElementAtIndex(i).FindPropertyRelative("gesture").enumValueIndex = (int)gestureIds[i];
             bindings.GetArrayElementAtIndex(i).FindPropertyRelative("activeState").objectReferenceValue = state;
+            bindings.GetArrayElementAtIndex(i).FindPropertyRelative("image").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Sprite>("Assets/Images/" + spriteNames[i] + ".png");
         }
+        sourceSettings.FindProperty("recognizedGestureImage").objectReferenceValue = Find("MetaQuest3Card")
+            .GetComponentsInChildren<UnityEngine.UI.Image>(true).Single(image => image.name == "GestureIcon");
         sourceSettings.ApplyModifiedProperties();
 
         var pointable = canvas.GetComponent<PointableCanvas>() ?? Undo.AddComponent<PointableCanvas>(canvas.gameObject);
