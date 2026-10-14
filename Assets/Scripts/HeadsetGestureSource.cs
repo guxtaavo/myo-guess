@@ -10,11 +10,13 @@ namespace MyoGuess.Gameplay
         public GestureType gesture;
         [Tooltip("ActiveStateGroup da pose da mão direita.")]
         public MonoBehaviour activeState;
+        public Sprite image;
     }
 
     public sealed class HeadsetGestureSource : GestureSource
     {
         [SerializeField] private HeadsetGestureBinding[] bindings;
+        [SerializeField] private UnityEngine.UI.Image recognizedGestureImage;
 
         private GestureType lastGesture;
         private string lastPoseName;
@@ -30,6 +32,53 @@ namespace MyoGuess.Gameplay
                 if (binding != null && binding.gesture == gesture && binding.activeState is IActiveState)
                     return true;
             return false;
+        }
+
+        private void LateUpdate()
+        {
+            if (recognizedGestureImage == null) return;
+            var recognized = FindRecognizedBinding();
+            recognizedGestureImage.sprite = recognized?.image;
+            recognizedGestureImage.enabled = recognized?.image != null;
+        }
+
+        private void OnDisable()
+        {
+            if (recognizedGestureImage != null)
+            {
+                recognizedGestureImage.sprite = null;
+                recognizedGestureImage.enabled = false;
+            }
+        }
+
+        private HeadsetGestureBinding FindRecognizedBinding()
+        {
+            if (!IsAvailable) return null;
+            HeadsetGestureBinding recognized = null;
+            foreach (var binding in bindings)
+            {
+                if (binding == null || binding.gesture == GestureType.None ||
+                    binding.activeState == null || !binding.activeState.isActiveAndEnabled ||
+                    !(binding.activeState is IActiveState state) || !state.Active) continue;
+
+                // Rest is permissive; a more specific pose takes precedence in the HUD.
+                if (recognized == null || RecognitionPriority(binding.gesture) > RecognitionPriority(recognized.gesture))
+                    recognized = binding;
+            }
+            return recognized;
+        }
+
+        private static int RecognitionPriority(GestureType gesture)
+        {
+            switch (gesture)
+            {
+                case GestureType.Tripod: return 5;
+                case GestureType.ThumbsUp: return 4;
+                case GestureType.Rock: return 3;
+                case GestureType.Pointer: return 2;
+                case GestureType.OpenHand: return 1;
+                default: return 0;
+            }
         }
 
         public override bool IsGestureActive(GestureType gesture)
