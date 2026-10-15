@@ -25,6 +25,9 @@ namespace MyoGuess.Gameplay
         public override bool IsAvailable => isActiveAndEnabled &&
             bindings != null && bindings.Length > 0;
 
+        // Usa a mesma prioridade do indicador de gesto da partida, sem favorecer o alvo esperado.
+        public GestureType GetRecognizedGesture() => FindRecognizedBinding()?.gesture ?? GestureType.None;
+
         public override bool CanRecognize(GestureType gesture)
         {
             if (bindings == null || gesture == GestureType.None) return false;
