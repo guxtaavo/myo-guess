@@ -107,3 +107,6 @@ InitTestScene*.unity*
 
 # ignore .venv
 *.venv
+
+# Dados gerados pelo treinamento
+#/data_collect/*.csv
