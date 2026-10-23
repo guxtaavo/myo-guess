@@ -37,7 +37,11 @@ namespace MyoGuess.Gameplay
             if (panelRoot != null) panelRoot.SetActive(false);
         }
 
-        private void RequestRestart() => RestartRequested?.Invoke();
+        private void RequestRestart()
+        {
+            MyoGuess.Audio.GameAudio.PlayClick();
+            RestartRequested?.Invoke();
+        }
         private void RequestMenu() => MenuRequested?.Invoke();
 
         private void OnDestroy()

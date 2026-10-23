@@ -39,11 +39,13 @@ namespace MyoGuess.MainMenu
 
         public void OpenGameplay()
         {
+            MyoGuess.Audio.GameAudio.PlayClick();
             SceneManager.LoadScene(gameplaySceneName);
         }
 
         public void OpenTraining()
         {
+            MyoGuess.Audio.GameAudio.PlayClick();
             SceneManager.LoadScene(trainingSceneName);
         }
     }

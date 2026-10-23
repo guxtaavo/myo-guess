@@ -120,6 +120,7 @@ namespace MyoGuess.Training
                 return;
 
             if (applicationPaused) return;
+            MyoGuess.Audio.GameAudio.PlayClick();
             try
             {
                 if (headsetSource == null || !headsetSource.IsAvailable)
@@ -146,6 +147,7 @@ namespace MyoGuess.Training
         public void ReturnToMenu()
         {
             if (IsRunning) return;
+            MyoGuess.Audio.GameAudio.PlayBack();
             CloseRecording();
             SceneManager.LoadScene(mainMenuSceneName);
         }

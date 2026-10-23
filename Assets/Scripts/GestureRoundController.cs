@@ -82,6 +82,7 @@ namespace MyoGuess.Gameplay
 
         public void RestartGame()
         {
+            MyoGuess.Audio.GameAudio.ResetGameplayFeedback();
             source = inputMode == GestureInputMode.Headset ? (GestureSource)headsetSource : fbgSource;
             if (gameOverPanel != null) gameOverPanel.Hide();
             if (!ValidateConfiguration())
@@ -133,6 +134,7 @@ namespace MyoGuess.Gameplay
         private void EndRound(RoundResult result)
         {
             bool correct = result == RoundResult.Correct;
+            if (!correct) MyoGuess.Audio.GameAudio.PlayMistake(session.IsGameOver);
             if (logRoundResults)
             {
                 string reading = source is HeadsetGestureSource headset
@@ -154,7 +156,11 @@ namespace MyoGuess.Gameplay
             }
         }
 
-        public void ReturnToMenu() => SceneManager.LoadScene(mainMenuSceneName);
+        public void ReturnToMenu()
+        {
+            MyoGuess.Audio.GameAudio.PlayBack();
+            SceneManager.LoadScene(mainMenuSceneName);
+        }
 
         private void UpdateHud()
         {
