@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using Oculus.Interaction;
+using Oculus.Interaction.PoseDetection;
 using UnityEngine;
 
 namespace MyoGuess.Gameplay
@@ -24,6 +26,26 @@ namespace MyoGuess.Gameplay
 
         public override bool IsAvailable => isActiveAndEnabled &&
             bindings != null && bindings.Length > 0;
+
+        private void Awake()
+        {
+            if (bindings == null) return;
+
+            foreach (var binding in bindings)
+            {
+                if (binding?.activeState == null ||
+                    binding.activeState.GetComponent<ShapeRecognizerActiveState>() == null) continue;
+
+                // Reconhece o formato dos dedos em qualquer direção da mão.
+                // Mantém os grupos e seus eventos; remove só as exigências de orientação
+                // nas instâncias usadas pelo jogo, sem alterar os assets do SDK.
+                foreach (var orientation in binding.activeState.GetComponents<TransformRecognizerActiveState>())
+                {
+                    orientation.InjectTransformFeatureList(
+                        TransformFeatureConfigList.Create(new List<TransformFeatureConfig>()));
+                }
+            }
+        }
 
         // Usa a mesma prioridade do indicador de gesto da partida, sem favorecer o alvo esperado.
         public GestureType GetRecognizedGesture() => FindRecognizedBinding()?.gesture ?? GestureType.None;
