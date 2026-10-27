@@ -1,9 +1,10 @@
 {
   "dependencies": {
     "com.github-glitchenzo.nugetforunity": "https://github.com/GlitchEnzo/NuGetForUnity.git?path=/src/NuGetForUnity",
-    "com.meta.xr.sdk.all": "205.0.0",
+    "com.meta.xr.sdk.all": "207.0.1",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.multiplayer.center": "1.0.1",
+    "com.unity.pipeline": "0.8.0-exp.1",
     "com.unity.test-framework": "1.6.0",
     "com.unity.xr.openxr": "1.16.1",
     "com.unity.modules.accessibility": "1.0.0",
@@ -39,7 +40,6 @@
     "com.unity.modules.video": "1.0.0",
     "com.unity.modules.vr": "1.0.0",
     "com.unity.modules.wind": "1.0.0",
-    "com.unity.modules.xr": "1.0.0",
-    "com.unity.pipeline": "0.8.0-exp.1"
+    "com.unity.modules.xr": "1.0.0"
   }
 }
