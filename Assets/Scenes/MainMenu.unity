@@ -177,7 +177,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _monoscopic: 0
-  _sharpenType: 0
+  _sharpenType: 65536
   _disableRecording: 0
   _enableDynamicResolution: 0
   minDynamicResolutionScale: 1
