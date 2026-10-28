@@ -70,10 +70,10 @@ namespace MyoGuess.Training
             get
             {
 #if UNITY_EDITOR
-                return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "data_collect"));
+                return Path.GetFullPath(Path.Combine(Application.dataPath, "..", "training"));
 #else
-                // No Quest o projeto do computador não está disponível; usa a pasta gravável do app.
-                return Path.Combine(Application.persistentDataPath, "data_collect");
+                // No Quest: Android/data/com.labtel.myoguess/files/training, sem permissão adicional.
+                return Path.Combine(Application.persistentDataPath, "training");
 #endif
             }
         }
@@ -116,7 +116,7 @@ namespace MyoGuess.Training
 
         public void StartSequence()
         {
-            if (!isActiveAndEnabled || IsRunning || gestureOrder == null)
+            if (!isActiveAndEnabled || IsRunning || Phase == TrainingPhase.Completed || gestureOrder == null)
                 return;
 
             if (applicationPaused) return;
@@ -309,8 +309,9 @@ namespace MyoGuess.Training
             else if (completed)
             {
                 phaseText.text = "SEQUÊNCIA CONCLUÍDA";
-                gestureText.text = "FINALIZADO";
-                instructionText.text = "Você concluiu todos os ciclos. Pode descansar a mão.";
+                gestureText.text = "CSV SALVO";
+                instructionText.text = LastCollectionPath == null ? "Você concluiu todos os ciclos. Pode descansar a mão."
+                    : "Salvo: training/" + Path.GetFileName(LastCollectionPath) + ". Volte ao menu para encerrar.";
             }
             else
             {
@@ -326,9 +327,10 @@ namespace MyoGuess.Training
             stepText.SetText("GESTO {0:0} / {1:0}", completed ? gestures.Length : running ? gestureIndex + 1 : 0, gestures.Length);
             progressText.SetText("{0:0} / {1:0} GESTOS CONCLUÍDOS", CompletedGestures, TotalGestures);
             progressFill.fillAmount = (float)CompletedGestures / TotalGestures;
-            startButton.interactable = !running;
+            startButton.gameObject.SetActive(!completed);
+            startButton.interactable = !running && !completed;
             backButton.interactable = !running;
-            startButtonText.text = completed ? "REPETIR" : "INICIAR";
+            startButtonText.text = "INICIAR";
             UpdateTimer();
         }
 

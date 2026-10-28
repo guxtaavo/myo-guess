@@ -43,8 +43,8 @@ public static class TrainingCollectionChecks
         object Call(string name, params object[] arguments) => typeof(TrainingInterfaceController).GetMethod(name, privateInstance).Invoke(controller, arguments);
         try
         {
-            Check(TrainingInterfaceController.CollectionDirectory == Path.GetFullPath(Path.Combine(Application.dataPath, "..", "data_collect")),
-                "No Editor, os CSVs devem ficar em data_collect na raiz do projeto.");
+            Check(TrainingInterfaceController.CollectionDirectory == Path.GetFullPath(Path.Combine(Application.dataPath, "..", "training")),
+                "No Editor, os CSVs devem ficar em training na raiz do projeto.");
             // Arquivos: número persistente, lacunas, cultura e leitura enquanto o gravador está aberto.
             CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo("pt-BR");
             var timestamp = new DateTimeOffset(2026, 10, 15, 13, 0, 0, TimeSpan.FromHours(-3));
@@ -52,7 +52,7 @@ public static class TrainingCollectionChecks
             using (var writer = TrainingCsvWriter.Create(directory))
             {
                 firstPath = writer.FilePath;
-                Check(Path.GetFileName(firstPath) == "COLETA_1.csv", "Primeira coleta deve usar COLETA_1.csv.");
+                Check(Path.GetFileName(firstPath) == "user_0001.csv" && Path.GetDirectoryName(firstPath) == directory, "Primeiro voluntário deve usar training/user_0001.csv, sem subpasta.");
                 writer.WriteSample(timestamp, 1.25, 2, 3, TrainingInterfaceController.TrainingPhase.Gesture, GestureType.OpenHand, GestureType.Pointer);
                 writer.Flush();
                 var lines = ReadLines(firstPath);
@@ -61,12 +61,37 @@ public static class TrainingCollectionChecks
             }
             string originalContents = File.ReadAllText(firstPath);
             using (var writer = TrainingCsvWriter.Create(directory))
-                Check(Path.GetFileName(writer.FilePath) == "COLETA_2.csv", "Nova sessão deve incrementar o número.");
-            File.WriteAllText(Path.Combine(directory, "COLETA_8.csv"), "coleta anterior");
-            File.WriteAllText(Path.Combine(directory, "COLETA_invalida.csv"), "ignorar");
+                Check(Path.GetFileName(writer.FilePath) == "user_0002.csv", "Nova coleta deve criar outro voluntário.");
+            Directory.CreateDirectory(Path.Combine(directory, "user_0008"));
+            Directory.CreateDirectory(Path.Combine(directory, "user_invalido"));
             using (var writer = TrainingCsvWriter.Create(directory))
-                Check(Path.GetFileName(writer.FilePath) == "COLETA_9.csv", "Numeração deve continuar após o maior número existente.");
+                Check(Path.GetFileName(writer.FilePath) == "user_0009.csv", "Numeração deve continuar após o maior usuário existente, inclusive pasta vazia.");
             Check(File.ReadAllText(firstPath) == originalContents, "Coletas anteriores não podem ser sobrescritas.");
+            File.Delete(Path.Combine(directory, "user_0009.csv"));
+            using (var writer = TrainingCsvWriter.Create(directory))
+                Check(Path.GetFileName(writer.FilePath) == "user_0010.csv",
+                    "Contador persistente não deve reutilizar ID de pasta removida.");
+            File.WriteAllText(Path.Combine(directory, "user_0011.csv"), "entrada existente");
+            using (var writer = TrainingCsvWriter.Create(directory))
+                Check(Path.GetFileName(writer.FilePath) == "user_0012.csv",
+                    "Arquivos com nome de usuário também devem reservar o ID.");
+            string edgeDirectory = Path.Combine(directory, "EdgeCases");
+            Directory.CreateDirectory(edgeDirectory);
+            string counterPath = Path.Combine(edgeDirectory, ".user_counter");
+            File.WriteAllText(counterPath, "9999");
+            using (var writer = TrainingCsvWriter.Create(edgeDirectory))
+                Check(Path.GetFileName(writer.FilePath) == "user_10000.csv",
+                    "IDs devem continuar após quatro dígitos.");
+            File.WriteAllText(counterPath, "inválido");
+            bool invalidCounterRejected = false;
+            try { using (TrainingCsvWriter.Create(edgeDirectory)) { } }
+            catch (IOException) { invalidCounterRejected = true; }
+            Check(invalidCounterRejected, "Contador corrompido deve interromper a coleta sem reiniciar os IDs.");
+            File.WriteAllText(counterPath, int.MaxValue.ToString(CultureInfo.InvariantCulture));
+            bool exhaustedCounterRejected = false;
+            try { using (TrainingCsvWriter.Create(edgeDirectory)) { } }
+            catch (IOException) { exhaustedCounterRejected = true; }
+            Check(exhaustedCounterRejected, "Esgotamento dos IDs deve falhar sem sobrescrever arquivos.");
 
             controller = scene.GetRootGameObjects().SelectMany(r => r.GetComponentsInChildren<TrainingInterfaceController>(true)).Single();
             Check((bool)Call("ValidateConfiguration"), "Cena deve ter referências, IDs de gestos e fonte de reconhecimento válidos.");
@@ -154,7 +179,18 @@ public static class TrainingCollectionChecks
             Check(recording.SampleCount == beforeSuspend + 1, "Após suspensão, amostras devem continuar no mesmo CSV sem botão Continuar.");
             int finalCount = recording.SampleCount;
             Call("BeginPhase", TrainingInterfaceController.TrainingPhase.Completed);
-            Check(backButton.interactable && startButton.interactable, "Após concluir, Voltar e Repetir devem ficar disponíveis.");
+            Check(backButton.interactable && !startButton.interactable && !startButton.gameObject.activeSelf,
+                "Após concluir, apenas Voltar deve estar disponível e Iniciar deve ficar oculto.");
+            string[] filesBeforeRestart = Directory.GetFiles(directory, "user_*.csv");
+            controller.StartSequence();
+            Check(controller.Phase == TrainingInterfaceController.TrainingPhase.Completed &&
+                typeof(TrainingInterfaceController).GetField("recording", privateInstance).GetValue(controller) == null &&
+                Directory.GetFiles(directory, "user_*.csv").Length == filesBeforeRestart.Length,
+                "Chamar StartSequence após concluir não deve criar CSV nem reiniciar o treinamento.");
+            Call("OnDisable");
+            Call("OnEnable");
+            Check(controller.Phase == TrainingInterfaceController.TrainingPhase.Completed && !startButton.gameObject.activeSelf,
+                "Reativar o componente não deve liberar repetição após concluir.");
             recording = null;
             using (File.Open(collectionPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None)) { }
             Check(File.ReadAllLines(collectionPath).Length == finalCount + 1, "Conclusão deve fechar o arquivo e preservar todas as amostras.");
