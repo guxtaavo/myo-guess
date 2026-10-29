@@ -335,6 +335,11 @@ Selecionar o modo FBG no Inspector ainda não habilita uma fonte funcional: o co
 
 Esses scripts usam o tópico `myo/gesture/id` e possuem um endereço de broker de desenvolvimento configurado no código ou Inspector. Esse endereço precisa ser ajustado para o ambiente em que os exemplos forem utilizados.
 
+Para executar um broker no computador e conectar a Raspberry e o Unity, consulte
+[as instruções do broker Python](Assets/Scripts/broker/README.md).
+O servidor `Assets/Scripts/broker/broker.py` usa aMQTT e escuta na porta TCP `1883`.
+Os clientes Python usam paho-mqtt para publicar e receber mensagens.
+
 O subscriber C# não faz parte das três cenas atuais do build. Também não há, no fluxo atual, uma conversão conectada desses IDs para `FbgGestureSource` ou uma integração com a HuskyLens 2. O protocolo final e o mapeamento de entradas externas ainda precisam ser definidos; os IDs dos exemplos MQTT não devem ser tratados como um contrato já implementado para os sensores.
 
 ## Verificações no Editor
