@@ -4,7 +4,7 @@ Myo Guess é uma plataforma experimental desenvolvida em **Unity para o Meta Que
 
 O objetivo da coleta é construir uma base de dados de diferentes pessoas para desenvolver um **algoritmo de machine learning capaz de identificar gestos a partir dos sinais dos sensores FBG e generalizar para outras pessoas**. O **Meta Quest 3 e a HuskyLens 2 terão o papel de fontes adicionais de validação**, acrescentando redundância à avaliação do algoritmo baseado em FBG.
 
-> **Projeto em desenvolvimento.** O foco do trabalho é validar os sensores FBG e o reconhecimento de gestos a partir deles. Atualmente, o aplicativo utiliza o reconhecimento do Quest para desenvolver e verificar o fluxo experimental. **Ainda falta integrar os sensores FBG e a HuskyLens 2**, assim como implementar o fluxo completo de dados e validação do modelo. A presença de scripts e bibliotecas relacionados a sensores e MQTT não significa que essas etapas estejam concluídas.
+> **Projeto em desenvolvimento.** O aplicativo já utiliza o reconhecimento do Quest no jogo e no protocolo de coleta. Há também scripts independentes para coletar os 21 pontos da HuskyLens 2, gravar CSVs e comparar gestos visualmente. A aquisição FBG, o modelo de machine learning e a comparação sincronizada das fontes dentro do aplicativo são etapas pendentes.
 
 ## Sumário
 
@@ -16,11 +16,11 @@ O objetivo da coleta é construir uma base de dados de diferentes pessoas para d
 - [Coleta e formato dos dados](#coleta-e-formato-dos-dados)
 - [Tecnologias e dependências](#tecnologias-e-dependências)
 - [Preparação do ambiente](#preparação-do-ambiente)
+- [Componentes Python e seus ambientes](#componentes-python-e-seus-ambientes)
 - [Build e instalação no Quest](#build-e-instalação-no-quest)
 - [Estrutura do projeto](#estrutura-do-projeto)
 - [Arquitetura e scripts principais](#arquitetura-e-scripts-principais)
 - [Verificações no Editor](#verificações-no-editor)
-- [Problemas comuns](#problemas-comuns)
 - [Próximas etapas](#próximas-etapas)
 - [Contribuições e assets](#contribuições-e-assets)
 
@@ -42,8 +42,8 @@ A base atual permite desenvolver a interface, as regras e o protocolo de coleta 
 | Áudio | Músicas por cena e efeitos de interface, erro e fim de jogo. |
 | Sensores FBG | **Foco da pesquisa; integração pendente.** `FbgGestureSource` ainda não fornece leituras. |
 | Modelo de machine learning para FBG | **Desenvolvimento pendente.** Objetivo de reconhecer gestos em pessoas além das utilizadas no treinamento do modelo. |
-| HuskyLens 2 | **Integração pendente.** Prevista como fonte adicional de validação e redundância. |
-| MQTT | Scripts auxiliares de recepção de IDs; sem integração com as regras atuais da partida. |
+| HuskyLens 2 | Coleta dos 21 pontos por I²C, gravação em CSV e comparação visual implementadas em scripts independentes. Integração com o aplicativo pendente. |
+| MQTT | Broker e scripts de publicação/recepção de IDs disponíveis; integração com as regras da partida pendente. |
 
 Os recursos descritos refletem o código e as configurações presentes no repositório. As verificações no Editor complementam, mas não substituem, os testes no headset e, futuramente, com os sensores físicos.
 
@@ -243,23 +243,67 @@ As versões abaixo são as declaradas no repositório, e não uma indicação da
 | Android mínimo / alvo | API 32 / API 34 em Player Settings |
 | Identificador Android | `com.labtel.myoguess` |
 
-O script auxiliar `gesture_subscriber.py` depende de `paho-mqtt`. Python não é necessário para executar o fluxo atual de partida e treinamento.
+Os scripts Python têm arquivos de requisitos próprios para coleta, visualização e broker, apresentados na seção [Componentes Python e seus ambientes](#componentes-python-e-seus-ambientes). A partida e o treinamento no Quest executam no aplicativo Unity.
 
 ## Preparação do ambiente
 
-1. Clone o repositório e abra sua pasta pelo **Unity Hub**.
-2. Instale o **Unity 6000.3.27f1** com **Android Build Support**, incluindo Android SDK, NDK e OpenJDK.
-3. Abra o projeto e aguarde a importação dos assets e a resolução dos pacotes.
-4. Confirme a restauração das dependências NuGet declaradas em `Assets/packages.config`. Se aparecerem erros de referências a `MQTTnet` ou `MicronOptics`, verifique a restauração pelo NuGetForUnity.
-5. Abra `Assets/Scenes/MainMenu.unity` como ponto de entrada.
-6. Para testar o reconhecimento, utilize o Quest com rastreamento das mãos ativo. Executar apenas o Editor sem uma fonte de poses não reproduz as condições de uso no headset.
+### 1. Baixar o projeto no notebook
 
-Não é necessário configurar um broker MQTT, conectar sensores FBG ou conectar a HuskyLens 2 para usar o reconhecimento atual pelo Quest.
+No notebook Linux, instale Git e baixe o repositório:
+
+```bash
+sudo apt update
+sudo apt install -y git
+mkdir -p ~/Documents/GitHub
+cd ~/Documents/GitHub
+git clone https://github.com/guxtaavo/myo-guess.git
+cd myo-guess
+```
+
+O diretório `~/Documents/GitHub/myo-guess` é a raiz do checkout usada nos comandos
+dos guias. A Raspberry terá uma cópia própria apenas dos scripts necessários,
+preparada pelo guia de coleta.
+
+### 2. Instalar o Unity e abrir o projeto
+
+1. Instale o [Unity Hub](https://unity.com/download) no notebook e entre com sua conta Unity.
+2. No Hub, instale **Unity 6000.3.27f1**, a versão registrada em `ProjectSettings/ProjectVersion.txt`.
+3. Durante a instalação do Editor, selecione **Android Build Support**, **Android SDK & NDK Tools** e **OpenJDK**.
+4. Em **Projects → Add → Add project from disk**, selecione a pasta `myo-guess` clonada na etapa anterior.
+5. Abra o projeto com esse Editor e aguarde a importação dos assets e a resolução dos pacotes de `Packages/manifest.json`.
+6. No menu do Unity, execute **NuGet → Restore Packages** para restaurar as dependências de `Assets/packages.config`. Aguarde a conclusão da restauração e a recompilação.
+7. Abra **File → Build Profiles**, selecione Android e ative esse perfil de build.
+8. Abra `Assets/Scenes/MainMenu.unity`, o ponto de entrada do aplicativo.
+
+O reconhecimento disponível no aplicativo usa o Quest. Prepare o headset e gere
+o APK seguindo a próxima seção de build; o broker e a HuskyLens pertencem aos
+fluxos Python descritos abaixo.
+
+## Componentes Python e seus ambientes
+
+Cada componente é instalado do zero em sua própria venv, no equipamento em que
+será executado. Os arquivos `requirements` são a fonte das dependências de cada
+componente; a lista de pacotes de uma máquina não descreve a instalação da outra.
+
+| Componente | Equipamento | Arquivo de requisitos no checkout | Passo a passo |
+| --- | --- | --- | --- |
+| Coleta HuskyLens e publicador de IDs | Raspberry Pi 5 | `Assets/Scripts/raspi5/requirements.txt` | [Preparar a Raspberry, instalar e coletar](Assets/Scripts/raspi5/README.md) |
+| Comparação dos CSVs | Notebook Linux | `Assets/Scripts/raspi5/requirements-plotter.txt` | [Instalar e executar o visualizador](Assets/Scripts/raspi5/README.md#7-instalar-o-visualizador-no-notebook) |
+| Broker MQTT | Notebook | `Assets/Scripts/broker/requirements.txt` | [Instalar e testar o broker](Assets/Scripts/broker/README.md) |
+
+Os guias indicam onde executar cada comando, como criar a venv, instalar os
+pacotes com `python -m pip install -r ARQUIVO` e iniciar cada script. Eles usam
+o caminho do Python da venv explicitamente para selecionar o ambiente correto.
+
+Para obter uma comparação de gestos: prepare a Raspberry, colete dois CSVs com
+rótulos diferentes, copie-os para o notebook e abra ambos no visualizador.
+O caminho do CSV é um argumento obrigatório do visualizador. O broker entra no
+fluxo de publicação de IDs por MQTT, não na gravação local dos pontos.
 
 ## Build e instalação no Quest
 
 1. Conecte o Quest ao computador por USB, habilite o modo de desenvolvedor e autorize a depuração no headset.
-2. No Unity, abra **File → Build Profiles**, selecione Android e ative a plataforma, se necessário.
+2. No Unity, abra **File → Build Profiles**, selecione Android e ative a plataforma.
 3. Confira a lista de cenas do build, nesta ordem:
    - `Assets/Scenes/MainMenu.unity`
    - `Assets/Scenes/Gameplay.unity`
@@ -293,6 +337,8 @@ Assets/
 │   └── PoseExamples.unity    # Cena auxiliar; fora do build principal
 └── Scripts/
     ├── Editor/               # Ferramentas e verificações do Editor
+    ├── broker/               # Broker MQTT e seus requisitos
+    ├── raspi5/               # Coletor, visualizador e requisitos de cada ambiente
     └── ...                   # Regras, reconhecimento, áudio e gravação
 Packages/                     # Dependências do Unity Package Manager
 ProjectSettings/              # Configurações do projeto e lista de cenas
@@ -329,7 +375,17 @@ Selecionar o modo FBG no Inspector ainda não habilita uma fonte funcional: o co
 | `GameAudioSettings.cs` | Define os campos de configuração de músicas, efeitos e volumes. |
 | `Assets/Resources/GameAudioSettings.asset` | Contém a configuração de áudio utilizada em execução. |
 
-### MQTT e integração futura
+### HuskyLens, MQTT e integração futura
+
+| Script Python | Responsabilidade |
+| --- | --- |
+| `raspi5/huskylens_landmark_logger.py` | Lê os 21 pontos por I²C e grava 45 colunas: horário, tempo, rótulo e 42 coordenadas. |
+| `raspi5/huskylens_landmark_plotter.py` | Compara amostras de um ou dois CSVs, com sobreposição, normalização e exportação. |
+| `raspi5/gesture_recognition.py` | Publica os IDs aprendidos pela Husky no tópico `myo/gesture/huskylens2/id`. |
+| `broker/broker.py` | Executa o servidor MQTT no notebook, na porta 1883. |
+
+Os CSVs da HuskyLens são arquivos independentes dos CSVs de treinamento do Quest.
+A comparação sincronizada entre HuskyLens, Quest e FBG ainda precisa ser integrada.
 
 `GestureSubscriber.cs` recebe IDs inteiros de gestos por MQTT, coloca as mensagens em uma fila e as processa na thread principal do Unity. O script Python `gesture_subscriber.py` é um leitor auxiliar que imprime os IDs recebidos.
 
@@ -357,19 +413,6 @@ A validação de coleta utiliza uma pasta temporária própria em `Logs/Training
 O menu **Myo Guess → Configurar gameplay** é uma ferramenta de edição, e não uma verificação: ele configura componentes e referências na cena `Assets/Scenes/Gameplay.unity`. Use-o apenas quando precisar reconstruir essa configuração e revise as alterações antes de salvá-las no Git.
 
 Depois de alterar reconhecimento, cenas ou armazenamento, faça também um teste no Quest: conclua uma partida, realize uma coleta, copie o CSV e confira seus dados. A existência dos comandos de validação não implica que a versão aberta no Editor ou o APK atual já tenham sido aprovados.
-
-## Problemas comuns
-
-| Sintoma | O que conferir |
-| --- | --- |
-| A mão ou o gesto não é reconhecido | Rastreamento das mãos ativo, mão direita visível, iluminação e referências das poses na cena. |
-| A partida não inicia no modo FBG | Esse modo ainda não está implementado. Use a entrada do Quest para o fluxo atual. |
-| O gesto aparece antes do fim, mas a rodada conta como erro | A partida consulta a pose uma única vez, perto de 4,9 s; mantenha o alvo reconhecido nesse instante. |
-| O treinamento não permite repetir ao concluir | Comportamento esperado: volte ao menu e abra o treinamento para iniciar outra coleta. |
-| Aparece “ERRO NA COLETA” | Verifique o Console ou logs do dispositivo, o armazenamento e a integridade de `.user_counter`. Preserve os dados antes de corrigir arquivos manualmente. |
-| Os CSVs não aparecem no gerenciador de arquivos | Confira a pasta do aplicativo e utilize `adb pull` com a depuração USB autorizada. |
-| Há erros de compilação relacionados a bibliotecas | Confira a versão do Unity, os pacotes do Package Manager e a restauração do NuGetForUnity. |
-| O áudio não toca | Confira `GameAudioSettings.asset`, os clips atribuídos e os listeners usando **Validar áudio**. |
 
 ## Próximas etapas
 
