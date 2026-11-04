@@ -7,12 +7,12 @@ from pathlib import Path
 
 import paho.mqtt.client as mqtt
 
-# A biblioteca DFRobot deve estar na raiz do checkout na Raspberry.
-PROJECT_DIR = Path(__file__).resolve().parents[3]
-sys.path.insert(
-    0,
-    str(PROJECT_DIR / "DFRobot_HuskylensV2" / "python" / "smbus2"),
-)
+# A biblioteca pode ficar ao lado de src/ ou na raiz do checkout Unity.
+for parent in Path(__file__).resolve().parents:
+    library_dir = parent / "DFRobot_HuskylensV2" / "python" / "smbus2"
+    if (library_dir / "dfrobot_huskylensv2.py").is_file():
+        sys.path.insert(0, str(library_dir))
+        break
 
 from dfrobot_huskylensv2 import (
     ALGORITHM_HAND_RECOGNITION,
