@@ -113,7 +113,7 @@ continuar aberto para receber a Raspberry.
 
 - **Raspberry:** use o IP do notebook anotado na seção 3, porta `1883` e tópico
   `myo/gesture/huskylens2/id`. A instalação do publicador e a configuração de
-  `MQTT_BROKER` estão no [guia da Raspberry](../raspi5/README.md#9-publicar-ids-por-mqtt-na-raspberry).
+  `MQTT_BROKER` estão no [guia da Raspberry](../raspi5/README.md#7-publicar-ids-por-mqtt-na-raspberry).
 - **Cliente no próprio notebook:** use `127.0.0.1:1883`.
 - **Cliente no Quest:** use o IP do notebook acessível pela rede do headset.
 

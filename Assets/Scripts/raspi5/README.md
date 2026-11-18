@@ -1,15 +1,16 @@
 # HuskyLens 2: coletar na Raspberry e visualizar no notebook
 
-Este guia parte da instalação do zero e termina com a comparação de dois
-CSVs. Execute os passos na ordem indicada e no equipamento identificado em
-cada seção.
+Este guia descreve a instalação, a coleta dos 21 pontos em CSV na Raspberry,
+a transferência dos arquivos e a visualização interativa no notebook com
+Python. A publicação de IDs por MQTT é um fluxo separado, descrito ao final.
+Execute os comandos no equipamento indicado em cada seção.
 
 ## 1. Equipamentos e ambientes
 
 | Atividade | Equipamento | Venv | Arquivo de requisitos |
 | --- | --- | --- | --- |
 | Coletar pontos e publicar IDs | Raspberry ligada à Husky por I²C | `~/Documents/myo-guess/.venv` | `~/Documents/myo-guess/requirements.txt`, copiado deste diretório |
-| Visualizar CSVs | Notebook Linux com este repositório | `Assets/Scripts/raspi5/.plotter.venv` | `Assets/Scripts/raspi5/requirements-plotter.txt` |
+| Visualizar CSVs no plotter interativo | Notebook | `~/Documents/GitHub/myo-guess/Assets/Scripts/raspi5/.venv` | `Assets/Scripts/raspi5/requirements-plotter.txt` |
 | Executar o broker | Notebook | Ambiente próprio do broker | [Guia do broker](../broker/README.md) |
 
 Cada venv pertence ao equipamento em que foi criada. Instalar pacotes no
@@ -19,6 +20,23 @@ Os exemplos do notebook usam Ubuntu 24.04 ou posterior, com Python 3.11 ou
 posterior e o checkout em `~/Documents/GitHub/myo-guess`. A Raspberry usa
 Raspberry Pi OS de 64 bits, o endereço `raspi5labtel@10.42.0.1` e os arquivos em
 `~/Documents/myo-guess`. Substitua o usuário e o IP pelos definidos na sua placa.
+
+No repositório do notebook, `Assets/Scripts/raspi5/` corresponde à pasta
+`~/Documents/myo-guess/` da Raspberry: ambas contêm `src/`, `data/` e
+`requirements.txt`. As venvs e a biblioteca de hardware pertencem a cada máquina.
+
+```text
+Assets/Scripts/raspi5/         # Notebook
+├── README.md
+├── requirements.txt          # Dependências da Raspberry
+├── requirements-plotter.txt  # Dependências do notebook
+├── .venv/                    # Ambiente local; fora do Git
+├── data/                     # CSVs locais; fora do Git
+└── src/
+    ├── gesture_recognition.py
+    ├── huskylens_landmark_logger.py
+    └── huskylens_landmark_plotter.py
+```
 
 ## 2. Preparar a Raspberry
 
@@ -96,8 +114,9 @@ mkdir -p ~/Documents/myo-guess/src
 
 ```bash
 cd ~/Documents/GitHub/myo-guess
-scp Assets/Scripts/raspi5/gesture_recognition.py \
-    Assets/Scripts/raspi5/huskylens_landmark_logger.py \
+scp Assets/Scripts/raspi5/src/gesture_recognition.py \
+    Assets/Scripts/raspi5/src/huskylens_landmark_logger.py \
+    Assets/Scripts/raspi5/src/huskylens_landmark_plotter.py \
     raspi5labtel@10.42.0.1:Documents/myo-guess/src/
 scp Assets/Scripts/raspi5/requirements.txt \
     raspi5labtel@10.42.0.1:Documents/myo-guess/requirements.txt
@@ -106,8 +125,7 @@ scp Assets/Scripts/raspi5/requirements.txt \
 Na Raspberry, `requirements.txt` fica na raiz de `myo-guess`, ao lado de `src`
 e `.venv`, pois descreve as dependências do componente executado nessa placa.
 
-O visualizador permanecerá no notebook. Copie os scripts e seus requisitos;
-os ambientes virtuais são criados separadamente em cada equipamento.
+Copie apenas os scripts e seus requisitos; a venv é criada na própria Raspberry.
 
 ## 4. Instalar as dependências da Raspberry
 
@@ -157,130 +175,138 @@ A estrutura preparada é:
 ├── DFRobot_HuskylensV2/
 │   └── python/smbus2/dfrobot_huskylensv2.py
 ├── requirements.txt
+├── data/          # CSVs gerados pelo coletor
 └── src/
     ├── gesture_recognition.py
-    └── huskylens_landmark_logger.py
+    ├── huskylens_landmark_logger.py
+    └── huskylens_landmark_plotter.py
 ```
 
 ## 5. Coletar os 21 pontos em CSV
 
-**Na Raspberry**, crie a pasta de dados e inicie uma coleta de mão aberta:
+**Na Raspberry**, inicie uma coleta:
 
 ```bash
 cd ~/Documents/myo-guess
-mkdir -p data
-.venv/bin/python src/huskylens_landmark_logger.py --csv data/mao_aberta_001.csv --label OpenHand
+source .venv/bin/activate
+python3 src/huskylens_landmark_logger.py mao_aberta_001.csv
 ```
 
-Mantenha uma mão no campo de visão da câmera. O terminal mostra o número de cada
-amostra, o estado da leitura e a quantidade de mãos. Encerre com **Ctrl+C**;
-o CSV já terá sido atualizado a cada amostra.
+O script cria a pasta `~/Documents/myo-guess/data/` automaticamente e
+salva nela os CSVs, mesmo quando iniciado de dentro de `src/`. No exemplo, o
+arquivo será `data/mao_aberta_001.csv`. Sem argumento, o nome é
+`huskylens_DATA_HORA_MICROSSEGUNDOS.csv`. Nomes relativos são resolvidos dentro
+da pasta de coletas; caminhos absolutos permitem outro destino. Arquivos já
+existentes são recusados para preservar a coleta anterior.
 
-Faça uma segunda coleta com o gesto de apontar:
+Para deixar o nome automático, execute sem o argumento do CSV:
 
 ```bash
-.venv/bin/python src/huskylens_landmark_logger.py --csv data/apontar_001.csv --label Pointer
+python3 src/huskylens_landmark_logger.py
 ```
 
-O argumento `--label` é uma anotação manual aplicada à coleta inteira. Ele não
-significa que o script reconheceu o gesto. Use um arquivo novo para cada coleta,
-por exemplo `mao_aberta_002.csv` na próxima repetição.
+Se o terminal já estiver em `~/Documents/myo-guess/src/`, use
+`python3 huskylens_landmark_logger.py mao_aberta_001.csv`. O destino continua
+sendo `~/Documents/myo-guess/data/`.
 
-O intervalo alvo é **0,5 segundo entre inícios de leitura**, buscando duas
-amostras por segundo. O programa desconta o tempo de leitura e gravação antes
-da espera. A taxa real é limitada pelo tempo de comunicação; os dados não são
-duplicados para preencher atrasos.
+O script ativa **Hand Recognition**, espera **5 segundos** para a câmera
+terminar de trocar o algoritmo e só então começa a gravar. Depois de cada
+leitura e gravação, espera 0,1 s antes da próxima leitura; o tempo de comunicação
+também conta no intervalo real. Grava uma linha **somente quando há uma mão visível**.
+Com mais de uma mão, usa a mais próxima do centro da imagem. Encerre com
+**Ctrl+C**; cada linha é salva no arquivo assim que é lida.
 
 ### Formato do CSV
 
-Cada linha contém **45 colunas**:
+Cada linha contém **44 colunas**:
 
 | Colunas | Conteúdo |
 | --- | --- |
-| `timestamp_utc` | Data e hora UTC de recebimento na Raspberry. |
-| `elapsed_s` | Segundos desde o início da coleta até o recebimento. |
-| `label` | Rótulo informado na execução. |
-| Demais 42 colunas | X/Y dos 21 pontos: punho e quatro pontos de cada dedo. |
+| `time_s` | Segundos desde o início da gravação (depois da espera de 5 s). |
+| `gesture_id` | ID do gesto informado pela câmera; `0` é gesto não aprendido. |
+| Demais 42 colunas | X/Y dos 21 pontos, na ordem da câmera: punho, polegar, indicador, médio, anelar e mínimo. |
 
 Os nomes seguem a biblioteca, como `wrist_x`, `wrist_y`, `index_finger_tip_x` e
-`index_finger_tip_y`. São coordenadas 2D da imagem. Ausência da mão e falhas
-produzem campos de coordenadas vazios, preservando o horário e o rótulo.
-Leituras parciais preservam os pontos disponíveis. Os estados `ok`, `no_hand`,
-`read_error` e `invalid_points` aparecem no terminal. Com mais de uma mão
-visível, o coletor usa a mais próxima do centro da imagem.
+`index_finger_tip_y`. São coordenadas 2D em pixels da imagem.
+O campo `gesture_id` identifica o gesto informado pela câmera. Use o nome do
+arquivo para identificar cada coleta ou participante.
 
-## 6. Copiar os CSVs para o notebook
+## 6. Sincronizar e visualizar os CSVs no notebook
 
-**Em um terminal local do notebook**, copie os dois arquivos produzidos:
+Encerre a coleta na Raspberry com **Ctrl+C** antes de sincronizar. Os dois
+equipamentos usam `data/`: na Raspberry em `~/Documents/myo-guess/data/` e no
+notebook em `~/Documents/GitHub/myo-guess/Assets/Scripts/raspi5/data/`.
+Os CSVs ficam fora do Git; a pasta local mantém os dados entre sessões.
 
-```bash
-cd ~/Documents/GitHub/myo-guess
-mkdir -p data/huskylens
-scp raspi5labtel@10.42.0.1:Documents/myo-guess/data/mao_aberta_001.csv data/huskylens/
-scp raspi5labtel@10.42.0.1:Documents/myo-guess/data/apontar_001.csv data/huskylens/
-```
+**Em um terminal local do notebook**, instale as dependências uma vez:
 
-Os próximos passos usam essas cópias locais, sem conexão com a câmera.
-
-## 7. Instalar o visualizador no notebook
-
-**No notebook Linux**, instale o suporte a venv e a janelas Tk do Python:
+No Ubuntu, instale `python3-venv`, `python3-pip` e `python3-tk` se ainda não
+estiverem disponíveis. O Tk permite abrir a janela interativa do Matplotlib:
 
 ```bash
-sudo apt update
-sudo apt install -y python3 python3-venv python3-pip python3-tk
-cd ~/Documents/GitHub/myo-guess
-python3 -m venv Assets/Scripts/raspi5/.plotter.venv
+sudo apt install -y python3-venv python3-pip python3-tk
 ```
-
-Instale os pacotes do visualizador em seu próprio ambiente:
 
 ```bash
-Assets/Scripts/raspi5/.plotter.venv/bin/python -m pip install -r Assets/Scripts/raspi5/requirements-plotter.txt
-Assets/Scripts/raspi5/.plotter.venv/bin/python -m pip check
+cd ~/Documents/GitHub/myo-guess/Assets/Scripts/raspi5
+python3 -m venv .venv  # somente se a venv do notebook ainda não existir
+.venv/bin/python -m pip install -r requirements-plotter.txt
+source .venv/bin/activate
 ```
 
-O arquivo `requirements-plotter.txt` declara Matplotlib e requer Python 3.11 ou
-posterior. Essa venv é independente da venv da Raspberry e da venv do broker.
+### Transferir uma nova coleta
 
-## 8. Abrir e comparar os gestos no notebook
-
-Abra o CSV de mão aberta informando seu caminho após o nome do script:
+**No terminal local do notebook**, dentro de `Assets/Scripts/raspi5/`, copie
+o CSV desejado. Substitua `mao_aberta_001.csv` pelo nome gerado na Raspberry:
 
 ```bash
-Assets/Scripts/raspi5/.plotter.venv/bin/python Assets/Scripts/raspi5/huskylens_landmark_plotter.py data/huskylens/mao_aberta_001.csv
+mkdir -p data
+scp -p raspi5labtel@10.42.0.1:Documents/myo-guess/data/mao_aberta_001.csv data/
 ```
 
-O CSV é um argumento obrigatório. Com um arquivo, o programa permite comparar
-duas amostras da mesma coleta. Para comparar as duas coletas:
+O comando solicita a senha SSH, se necessário, e copia apenas o arquivo
+indicado. Também é possível copiar por SFTP ou pedir ao Codex para buscar as
+novas coletas pela conexão autenticada disponível. A atualização é feita sob
+demanda. Depois da cópia, renomear um CSV no notebook não altera o original na
+Raspberry; use o nome local ao abrir o plotter.
+
+### Abrir o plotter com Python
+
+Em cada novo terminal do notebook, entre na pasta do componente e ative sua
+venv. O arquivo CSV é um argumento obrigatório:
 
 ```bash
-Assets/Scripts/raspi5/.plotter.venv/bin/python Assets/Scripts/raspi5/huskylens_landmark_plotter.py data/huskylens/mao_aberta_001.csv data/huskylens/apontar_001.csv
+cd ~/Documents/GitHub/myo-guess/Assets/Scripts/raspi5
+source .venv/bin/activate
+python3 src/huskylens_landmark_plotter.py data/mao_aberta_001.csv
 ```
 
-| Controle | Ação |
-| --- | --- |
-| **Amostra A / Amostra B** | Seleciona a linha de cada coleta; a contagem começa em 1. |
-| **Sobrepor** | Desenha as duas mãos no mesmo gráfico. |
-| **Alinhar punho / escala** | Coloca o punho na origem e usa a distância punho–base do médio como unidade. |
-| **Índices dos pontos** | Mostra os números de 0 a 20, com a correspondência dos dedos no rodapé. |
-
-Os gráficos têm os mesmos limites e proporções. Y cresce para baixo, como na
-imagem. A normalização preserva a orientação; não corrige perspectiva. Uma
-amostra sem punho ou base do médio não pode ser normalizada. Linhas vazias
-continuam na sequência, e pontos ausentes não são interpolados.
-
-Para salvar uma comparação sem abrir janela:
+O plotter abre um CSV por vez. Para salvar uma imagem em vez de abrir a janela:
 
 ```bash
-Assets/Scripts/raspi5/.plotter.venv/bin/python Assets/Scripts/raspi5/huskylens_landmark_plotter.py data/huskylens/mao_aberta_001.csv data/huskylens/apontar_001.csv --normalize --overlay --save data/huskylens/comparacao_001.png
+python3 src/huskylens_landmark_plotter.py data/mao_aberta_001.csv --save mao_aberta.png
 ```
 
-Use `--sample-a 2 --sample-b 3` para escolher amostras na exportação e
-`--no-indices` para ocultar os números. A exportação aceita PNG, SVG e PDF;
-cada exportação deve receber um nome de arquivo novo.
+O primeiro argumento é o script Python; o segundo é o caminho do CSV, relativo
+à pasta atual do terminal. Se o terminal já estiver em `src/`, use
+`python3 huskylens_landmark_plotter.py ../data/mao_aberta_001.csv`. O `..` sobe
+de `src/` para a pasta que contém `data/`.
 
-## 9. Publicar IDs por MQTT na Raspberry
+Sem `--save`, abre uma janela interativa: arraste a barra **Amostra**, use
+**←/→** para navegar, **Espaço** para reproduzir/pausar e **R** para alternar a
+rotação. Execute no notebook, em um terminal com acesso à sessão gráfica
+(inclusive o terminal integrado do Codex). Se estiver no prompt
+`raspi5labtel@pi`, abra outro terminal local ou use `exit` para sair do SSH.
+Depois de sincronizados, os CSVs e o plotter funcionam com a Raspberry desconectada.
+
+O painel esquerdo mostra os pontos em pixels. O direito coloca o punho na
+origem e divide as coordenadas pela distância entre o punho e a base do dedo
+médio; a tecla **R** também alinha esse dedo para cima. O painel inferior mostra
+o `gesture_id` ao longo do tempo. `--amostra 10` seleciona a amostra inicial e
+`--rotacao` inicia com o alinhamento ligado. O plotter lê o CSV de 44 colunas
+descrito na seção 5: `time_s`, `gesture_id` e as coordenadas X/Y dos 21 pontos.
+
+## 7. Publicar IDs por MQTT na Raspberry
 
 Este fluxo publica os IDs aprendidos pela HuskyLens. Use a preparação da
 Raspberry das seções 2 a 4.
@@ -300,7 +326,7 @@ cd ~/Documents/myo-guess
 ```
 
 O script publica IDs inteiros, inclusive quando se repetem. `-1` indica ausência
-de gesto ou falha de leitura; `0` é o ID nativo de gesto não aprendido. Nesse
-publicador, a pausa de 0,5 segundo acontece depois da leitura, diferentemente
-da frequência alvo do coletor de pontos. Encerre com **Ctrl+C**. O mapeamento
+de gesto ou falha de leitura; `0` é o ID nativo de gesto não aprendido. O
+publicador espera 0,5 segundo depois de cada leitura e publicação.
+Encerre com **Ctrl+C**. O mapeamento
 desses IDs para os gestos do aplicativo Unity é uma integração pendente.

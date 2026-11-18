@@ -4,7 +4,7 @@ Myo Guess é uma plataforma experimental desenvolvida em **Unity para o Meta Que
 
 O objetivo da coleta é construir uma base de dados de diferentes pessoas para desenvolver um **algoritmo de machine learning capaz de identificar gestos a partir dos sinais dos sensores FBG e generalizar para outras pessoas**. O **Meta Quest 3 e a HuskyLens 2 terão o papel de fontes adicionais de validação**, acrescentando redundância à avaliação do algoritmo baseado em FBG.
 
-> **Projeto em desenvolvimento.** O aplicativo já utiliza o reconhecimento do Quest no jogo e no protocolo de coleta. Há também scripts independentes para coletar os 21 pontos da HuskyLens 2, gravar CSVs e comparar gestos visualmente. A aquisição FBG, o modelo de machine learning e a comparação sincronizada das fontes dentro do aplicativo são etapas pendentes.
+> **Projeto em desenvolvimento.** O aplicativo já utiliza o reconhecimento do Quest no jogo e no protocolo de coleta. Há também scripts independentes para coletar os 21 pontos da HuskyLens 2, gravar CSVs e visualizar as amostras no notebook. A aquisição FBG, o modelo de machine learning e a comparação sincronizada das fontes dentro do aplicativo são etapas pendentes.
 
 ## Sumário
 
@@ -42,7 +42,7 @@ A base atual permite desenvolver a interface, as regras e o protocolo de coleta 
 | Áudio | Músicas por cena e efeitos de interface, erro e fim de jogo. |
 | Sensores FBG | **Foco da pesquisa; integração pendente.** `FbgGestureSource` ainda não fornece leituras. |
 | Modelo de machine learning para FBG | **Desenvolvimento pendente.** Objetivo de reconhecer gestos em pessoas além das utilizadas no treinamento do modelo. |
-| HuskyLens 2 | Coleta dos 21 pontos por I²C, gravação em CSV e comparação visual implementadas em scripts independentes. Integração com o aplicativo pendente. |
+| HuskyLens 2 | Coleta dos 21 pontos por I²C, gravação em CSV e visualização interativa das amostras implementadas em scripts independentes. Integração com o aplicativo pendente. |
 | MQTT | Broker e scripts de publicação/recepção de IDs disponíveis; integração com as regras da partida pendente. |
 
 Os recursos descritos refletem o código e as configurações presentes no repositório. As verificações no Editor complementam, mas não substituem, os testes no headset e, futuramente, com os sensores físicos.
@@ -224,7 +224,7 @@ adb pull /sdcard/Android/data/com.labtel.myoguess/files/training ./training
 
 O armazenamento pertence ao aplicativo e não exige a permissão `MANAGE_EXTERNAL_STORAGE`. Alguns gerenciadores de arquivos restringem a navegação em `Android/data`; a cópia por ADB é uma alternativa para o fluxo de desenvolvimento.
 
-Uma atualização com o mesmo identificador e assinatura normalmente preserva os dados. Desinstalar ou limpar os dados do aplicativo pode apagar as coletas. Se houver uma instalação antiga com outro identificador, ela possui uma pasta de dados separada. Arquivos do formato anterior em `files/data_collect` não são migrados nem excluídos automaticamente.
+As coletas ficam na pasta de dados associada ao identificador do aplicativo. Uma atualização com o mesmo identificador e assinatura normalmente preserva os dados. Desinstalar ou limpar os dados do aplicativo pode apagar as coletas; copie os CSVs para o computador para mantê-los fora do headset.
 
 ## Tecnologias e dependências
 
@@ -288,17 +288,32 @@ componente; a lista de pacotes de uma máquina não descreve a instalação da o
 | Componente | Equipamento | Arquivo de requisitos no checkout | Passo a passo |
 | --- | --- | --- | --- |
 | Coleta HuskyLens e publicador de IDs | Raspberry Pi 5 | `Assets/Scripts/raspi5/requirements.txt` | [Preparar a Raspberry, instalar e coletar](Assets/Scripts/raspi5/README.md) |
-| Comparação dos CSVs | Notebook Linux | `Assets/Scripts/raspi5/requirements-plotter.txt` | [Instalar e executar o visualizador](Assets/Scripts/raspi5/README.md#7-instalar-o-visualizador-no-notebook) |
+| Plotter interativo dos CSVs da HuskyLens | Notebook | `Assets/Scripts/raspi5/requirements-plotter.txt` | [Sincronizar e visualizar coletas](Assets/Scripts/raspi5/README.md#6-sincronizar-e-visualizar-os-csvs-no-notebook) |
 | Broker MQTT | Notebook | `Assets/Scripts/broker/requirements.txt` | [Instalar e testar o broker](Assets/Scripts/broker/README.md) |
 
 Os guias indicam onde executar cada comando, como criar a venv, instalar os
 pacotes com `python -m pip install -r ARQUIVO` e iniciar cada script. Eles usam
 o caminho do Python da venv explicitamente para selecionar o ambiente correto.
 
-Para obter uma comparação de gestos: prepare a Raspberry, colete dois CSVs com
-rótulos diferentes, copie-os para o notebook e abra ambos no visualizador.
-O caminho do CSV é um argumento obrigatório do visualizador. O broker entra no
-fluxo de publicação de IDs por MQTT, não na gravação local dos pontos.
+Para coletar gestos: prepare a Raspberry e grave um CSV por coleta em
+`~/Documents/myo-guess/data/`, com nomes que identifiquem os experimentos.
+Copie os arquivos desejados por SCP ou SFTP para `Assets/Scripts/raspi5/data/`
+no notebook. A transferência acontece sob demanda e pode ser solicitada ao
+Codex quando a Raspberry estiver conectada. Para abrir o plotter diretamente
+com Python no notebook:
+
+```bash
+cd ~/Documents/GitHub/myo-guess/Assets/Scripts/raspi5
+source .venv/bin/activate
+python3 src/huskylens_landmark_plotter.py data/mao_aberta_001.csv
+```
+
+Substitua o nome pelo CSV local desejado. A janela permite navegar pela barra
+de amostras, comparar pontos crus e normalizados e acompanhar os IDs ao longo
+do tempo. O coletor gera 44 colunas: `time_s`, `gesture_id` e 42 coordenadas X/Y.
+O broker entra no fluxo de publicação de IDs por MQTT; a coleta e o plotter
+funcionam sem ele. O [guia da Raspberry](Assets/Scripts/raspi5/README.md) detalha
+a instalação de cada ambiente e os comandos de transferência.
 
 ## Build e instalação no Quest
 
@@ -338,7 +353,9 @@ Assets/
 └── Scripts/
     ├── Editor/               # Ferramentas e verificações do Editor
     ├── broker/               # Broker MQTT e seus requisitos
-    ├── raspi5/               # Coletor, visualizador e requisitos de cada ambiente
+    ├── raspi5/               # Espelho do componente da Raspberry
+    │   ├── src/              # Coletor, publicador MQTT e plotter
+    │   └── data/             # CSVs copiados da Raspberry; fora do Git
     └── ...                   # Regras, reconhecimento, áudio e gravação
 Packages/                     # Dependências do Unity Package Manager
 ProjectSettings/              # Configurações do projeto e lista de cenas
@@ -379,9 +396,9 @@ Selecionar o modo FBG no Inspector ainda não habilita uma fonte funcional: o co
 
 | Script Python | Responsabilidade |
 | --- | --- |
-| `raspi5/huskylens_landmark_logger.py` | Lê os 21 pontos por I²C e grava 45 colunas: horário, tempo, rótulo e 42 coordenadas. |
-| `raspi5/huskylens_landmark_plotter.py` | Compara amostras de um ou dois CSVs, com sobreposição, normalização e exportação. |
-| `raspi5/gesture_recognition.py` | Publica os IDs aprendidos pela Husky no tópico `myo/gesture/huskylens2/id`. |
+| `raspi5/src/huskylens_landmark_logger.py` | Espera 5 s após ativar Hand Recognition e grava os pontos em `data/`, sem sobrescrever coletas existentes. |
+| `raspi5/src/huskylens_landmark_plotter.py` | Mostra pontos crus, normalizados e IDs com navegação interativa pelas amostras. |
+| `raspi5/src/gesture_recognition.py` | Publica os IDs aprendidos pela Husky no tópico `myo/gesture/huskylens2/id`. |
 | `broker/broker.py` | Executa o servidor MQTT no notebook, na porta 1883. |
 
 Os CSVs da HuskyLens são arquivos independentes dos CSVs de treinamento do Quest.
